@@ -176,6 +176,29 @@ final class MemcachedServiceProviderTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse(isset($app['memcache']));
     }
 
+    public function testMultipleInstances()
+    {
+        $name1 = 'cache1';
+        $name2 = 'cache2';
+
+        $app = new Application();
+
+        $app->register(new MemcachedServiceProvider($name1), array($name1.'.prefix' => $name1));
+        $app->register(new MemcachedServiceProvider($name2), array($name2.'.prefix' => $name2));
+
+        $this->assertTrue(isset($app[$name1]));
+        $this->assertTrue(isset($app[$name2]));
+
+        $this->assertFalse(isset($app['memcache']));
+        $this->assertFalse(isset($app['memcache']));
+
+        $app[$name1]->set('foo', 'bar');
+        $app[$name2]->set('foo', 'baz');
+
+        $this->assertSame('bar', $app[$name1]->get('foo'));
+        $this->assertSame('baz', $app[$name2]->get('foo'));
+    }
+
     private function runCacheTest(Application $app, $prefix)
     {
         $prefixReadBack = $app['memcache']->getOption(\Memcached::OPT_PREFIX_KEY);
